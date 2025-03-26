@@ -1,0 +1,28 @@
+{
+  "name": "adhd-discord-bot",
+  "main": "src/discord/index.js",
+  "compatibility_date": "2025-03-24",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "DISCORD_CLIENT_ID": "${DISCORD_CLIENT_ID}",
+    "DISCORD_CLIENT_SECRET": "${DISCORD_CLIENT_SECRET}",
+    "DISCORD_PUBLIC_KEY": "${DISCORD_PUBLIC_KEY}"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "POMODORO_STORAGE",
+      "id": "869cb07a6a894e459f5a9353becfc6cf"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}
