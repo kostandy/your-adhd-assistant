@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+.gitsecret
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Development environments
+.vscode/
+.idea/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Local development files
+.dev.vars
+.cursor/
+.wrangler/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# Audio cache - we want to create this fresh in the container
+audio-cache/
+
+# Documentation
+README.md
+LICENSE
+*.md
+
+# CI/CD
+.github/ 

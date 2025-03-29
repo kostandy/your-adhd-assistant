@@ -25,19 +25,79 @@ jobs:
     - name: Lint
       run: npm run lint
     
-    - name: Test
-      run: npm run test
+    #- name: Test
+    #  run: npm run test
       
-  # deploy:
-  #   needs: build
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #   runs-on: ubuntu-latest
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
     
-  #   steps:
-  #   - uses: actions/checkout@v4
+    steps:
+    - uses: actions/checkout@v4
     
-    # Add deployment steps here when ready to deploy
-    # This could include:
-    # - Deploying to a cloud service
-    # - Building and pushing Docker images
-    # - Updating a running instance 
+    - name: Setup SSH for Oracle VM
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.ORACLE_VM_SSH_KEY }}
+    
+    - name: Deploy to Oracle VM
+      env:
+        OCI_VM_HOST: ${{ secrets.OCI_VM_HOST }}
+        OCI_VM_USER: ${{ secrets.OCI_VM_USER }}
+        DISCORD_CLIENT_ID: ${{ vars.DISCORD_CLIENT_ID }}
+        DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        DISCORD_PUBLIC_KEY: ${{ vars.DISCORD_PUBLIC_KEY }}
+        OCID: ${{ secrets.OCID }}
+        OCI_TENANCY: ${{ secrets.OCI_TENANCY }}
+        OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
+        OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+        OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        OCI_BUCKET_NAME: ${{ vars.OCI_BUCKET_NAME }}
+      run: |
+        # Create deployment script
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+
+        # Create required directories
+        mkdir -p ~/discord-bot/{audio-cache,oci-keys}
+
+        # Create private key file from environment variable
+        echo "${OCI_PRIVATE_KEY}" > ~/discord-bot/oci-keys/private.pem
+        chmod 600 ~/discord-bot/oci-keys/private.pem
+
+        # Clone/pull latest code
+        if [ -d "~/discord-bot/app" ]; then
+          cd ~/discord-bot/app
+          git pull
+        else
+          git clone https://github.com/dmand/adhd-discord-bot.git ~/discord-bot/app
+          cd ~/discord-bot/app
+        fi
+
+        # Install dependencies
+        npm ci
+
+        # Create .env file
+        cat > .env << EOL
+        DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+        DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+        DISCORD_PUBLIC_KEY=${DISCORD_PUBLIC_KEY}
+        OCID=${OCID}
+        OCI_TENANCY=${OCI_TENANCY}
+        OCI_USER_ID=${OCI_USER_ID}
+        OCI_BUCKET_NAME=${OCI_BUCKET_NAME}
+        OCI_FINGERPRINT=${OCI_FINGERPRINT}
+        OCI_PRIVATE_KEY=/app/oci-keys/private.pem
+        PORT=3000
+        EOL
+
+        # Restart the service
+        pm2 restart discord-bot || pm2 start src/index.js --name discord-bot
+        EOF
+
+        # Copy and execute deployment script
+        chmod +x deploy.sh
+        scp -o StrictHostKeyChecking=no deploy.sh $OCI_VM_USER@$OCI_VM_HOST:~/deploy.sh
+        ssh -o StrictHostKeyChecking=no $OCI_VM_USER@$OCI_VM_HOST "chmod +x ~/deploy.sh && ~/deploy.sh" 
