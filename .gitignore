@@ -1,5 +1,5 @@
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 
@@ -30,6 +30,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cursor
+.cursor
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts 
@@ -42,3 +45,8 @@ next-env.d.ts
 # Cloudflare Workers
 .wrangler/
 .dev.vars
+
+# new additions
+*.log
+dist/
+coverage/
